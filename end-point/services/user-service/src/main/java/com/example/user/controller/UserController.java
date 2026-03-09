@@ -1,14 +1,12 @@
 package com.example.user.controller;
 
-import com.example.common.result.R;
+import com.example.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -17,4 +15,10 @@ public class UserController {
     public String hello() {
         return "hello user";
     }
+
+    @GetMapping("/{id}")
+    public String getUser(@PathVariable Long id) {
+        return "get user " + id;
+    }
+
 }
