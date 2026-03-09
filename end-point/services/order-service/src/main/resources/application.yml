@@ -3,6 +3,12 @@ server:
 spring:
   application:
     name: order-service
+  cloud:
+    nacos:
+      server-addr: http://127.0.0.1:8849
+      config:
+        import-check:
+          enabled: false
   data:
     redis:
       host: localhost

@@ -11,8 +11,8 @@ import org.springframework.context.annotation.ComponentScan;
         "com.example.user",
         "com.example.common"
 })
-public class UserServiceApplication {
+public class UserMainApplication {
     public static void main(String[] args) {
-        SpringApplication.run(UserServiceApplication.class, args);
+        SpringApplication.run(UserMainApplication.class, args);
     }
 }

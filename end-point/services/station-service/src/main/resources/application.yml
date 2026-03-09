@@ -3,6 +3,12 @@ server:
 spring:
   application:
     name: station-service
+  cloud:
+    nacos:
+      server-addr: localhost:8849
+      config:
+        import-check:
+          enabled: false
   data:
     redis:
       host: localhost

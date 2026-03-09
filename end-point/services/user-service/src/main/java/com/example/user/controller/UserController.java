@@ -13,5 +13,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/user")
 public class UserController {
-
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello user";
+    }
 }
