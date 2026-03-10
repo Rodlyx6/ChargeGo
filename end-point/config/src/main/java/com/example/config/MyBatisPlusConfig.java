@@ -1,4 +1,4 @@
-package com.example.common.config;
+package com.example.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 /**
  * MyBatis-Plus 自动填充配置
- * 用于自动填充 create_time 和 update_time
+ * 自动填充 create_time 和 update_time 字段
  */
 @Component
 public class MyBatisPlusConfig implements MetaObjectHandler {

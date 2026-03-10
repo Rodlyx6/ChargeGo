@@ -1,4 +1,4 @@
-package com.example.common.config;
+package com.example.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -10,14 +10,16 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
+/**
+ * Redis 序列化配置
+ * 解决 LocalDateTime 等 Java 8 时间类型的序列化问题
+ */
 @Configuration
 public class RedisConfig {
+
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        // 创建 RedisTemplate 对象
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-
-        // 设置连接工厂
         template.setConnectionFactory(connectionFactory);
 
         // 配置 ObjectMapper 支持 Java 8 时间类型
@@ -25,18 +27,14 @@ public class RedisConfig {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        // 创建 JSON 序列化工具
-        GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
-        // 设置 Key 的序列化
+        // Key 用 String 序列化，Value 用 JSON 序列化
         template.setKeySerializer(RedisSerializer.string());
         template.setHashKeySerializer(RedisSerializer.string());
+        template.setValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(jsonSerializer);
 
-        // 设置 Value 的序列化
-        template.setValueSerializer(jsonRedisSerializer);
-        template.setHashValueSerializer(jsonRedisSerializer);
-
-        // 返回
         return template;
     }
 }

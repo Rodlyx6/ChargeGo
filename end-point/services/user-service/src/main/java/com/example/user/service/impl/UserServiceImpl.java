@@ -10,13 +10,14 @@ import com.example.user.dto.LoginResponse;
 import com.example.user.entity.User;
 import com.example.user.mapper.UserMapper;
 import com.example.user.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
-
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
@@ -74,10 +75,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String redisKey = "login:user:" + user.getId();
         redisTemplate.opsForValue().set(redisKey, userDTO, 7, TimeUnit.DAYS);
 
-        // 5. 返回登录响应
+        // 5. 生成登录响应
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setUserInfo(userDTO);
+
+        // 6. 打印日志，方便测试时直接复制 Token
+        log.info("用户登录成功 | 手机号: {} | userId: {} | role: {}", phone, user.getId(), user.getRole());
+        log.info("Token: {}", token);
 
         return response;
     }
