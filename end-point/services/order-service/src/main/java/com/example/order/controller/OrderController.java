@@ -18,7 +18,7 @@ public class OrderController {
     }
 
     @GetMapping("/user/{id}")
-    public String getUser(@PathVariable Long id) {
+    public String getUserById(@PathVariable Long id) {
         return userFeignClient.getUserById(id);
     }
 }

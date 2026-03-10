@@ -3,6 +3,8 @@ server:
 spring:
   application:
     name: order-service
+  profiles:
+    include: feign
   cloud:
     nacos:
       server-addr: http://127.0.0.1:8849
