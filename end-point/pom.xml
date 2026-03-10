@@ -13,7 +13,6 @@
         <module>gateway-service</module>
         <module>services</module>
         <module>common</module>
-        <module>config</module>
     </modules>
     <groupId>org.example</groupId>
     <artifactId>end-point</artifactId>
