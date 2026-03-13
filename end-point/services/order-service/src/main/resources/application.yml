@@ -7,10 +7,11 @@ spring:
     include: feign
   cloud:
     nacos:
-      server-addr: http://127.0.0.1:8849
+      server-addr: localhost:8849
       config:
         import-check:
           enabled: false
+
   data:
     redis:
       host: localhost
@@ -28,7 +29,16 @@ spring:
     url: jdbc:mysql://localhost:3306/charging_order?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 88888888
-
+  # RabbitMQ 配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    # 消息发送失败时返回给生产者
+    publisher-returns: true
+    publisher-confirm-type: correlated
 
 mybatis-plus:
   configuration:

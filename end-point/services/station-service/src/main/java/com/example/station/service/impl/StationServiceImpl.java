@@ -1,5 +1,6 @@
 package com.example.station.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.station.dto.NearbyStationVO;
 import com.example.station.entity.Station;
@@ -28,12 +29,17 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
 
     @Override
     public void updateStationStatus(Long stationId, Integer status) {
+        // 检查充电桩是否存在
         Station station = this.getById(stationId);
         if (station == null) {
             throw new RuntimeException("充电桩不存在，ID: " + stationId);
         }
-        station.setStatus(status);
-        this.updateById(station);
+        
+        // 只更新 status 字段，避免 GEOMETRY 字段反序列化问题
+        LambdaUpdateWrapper<Station> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Station::getId, stationId)
+                     .set(Station::getStatus, status);
+        this.update(updateWrapper);
         log.info("充电桩状态更新 | stationId: {} | 新状态: {}", stationId, status);
     }
 }
