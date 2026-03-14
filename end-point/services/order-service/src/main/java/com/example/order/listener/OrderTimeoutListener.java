@@ -1,6 +1,6 @@
 package com.example.order.listener;
 
-import com.example.order.service.OrderCancelService;
+import com.example.order.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class OrderTimeoutListener {
 
     @Autowired
-    private OrderCancelService orderCancelService;
+    private OrderService orderService;
 
     /**
      * 监听死信队列中的消息
@@ -25,7 +25,7 @@ public class OrderTimeoutListener {
     public void handleTimeoutOrder(String orderNo) {
         log.info("收到超时取消消息 | orderNo: {}", orderNo);
         try {
-            orderCancelService.cancelTimeoutOrder(orderNo);
+            orderService.cancelTimeoutOrder(orderNo);
         } catch (Exception e) {
             log.error("处理超时取消失败 | orderNo: {} | error: {}", orderNo, e.getMessage());
         }

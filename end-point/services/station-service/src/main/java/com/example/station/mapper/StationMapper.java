@@ -1,14 +1,12 @@
 package com.example.station.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.station.dto.NearbyStationVO;
 import com.example.station.entity.Station;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface StationMapper extends BaseMapper<Station> {
@@ -38,9 +36,9 @@ public interface StationMapper extends BaseMapper<Station> {
             "FROM station " +
             "WHERE ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', #{longitude}, ' ', #{latitude}, ')'))) <= #{radiusMeters} " +
             "ORDER BY distance ASC")
-    List<NearbyStationVO> findNearbyStations(@Param("longitude") Double longitude,
-                                             @Param("latitude") Double latitude,
-                                             @Param("radiusMeters") Double radiusMeters);
+    List<Station> findNearbyStations(@Param("longitude") Double longitude,
+                                      @Param("latitude") Double latitude,
+                                      @Param("radiusMeters") Double radiusMeters);
 
     /**
      * 查询所有充电桩，并将 GEOMETRY 转为可读格式

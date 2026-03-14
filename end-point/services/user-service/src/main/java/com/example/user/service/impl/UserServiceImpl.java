@@ -4,12 +4,12 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.common.constant.UserRole;
+import com.example.common.enums.UserRoleEnum;
 import com.example.common.exception.BusinessException;
 import com.example.common.util.JwtUtil;
-import com.example.user.dto.LoginResponse;
 import com.example.user.entity.User;
 import com.example.user.mapper.UserMapper;
+import com.example.user.model.vo.UserLoginVO;
 import com.example.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,16 +36,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public LoginResponse login(String phone, String password) {
+    public UserLoginVO login(String phone, String password) {
         User user = getUserByPhone(phone);
         checkPassword(user, password);
         
         String token = JwtUtil.generateToken(user.getId(), user.getRole());
         cacheUserInfo(user);
         
-        log.info("用户登录成功 | phone: {} | userId: {} | role: {}", phone, user.getId(), user.getRole());
+        log.info("用户登录成功 | phone: {} | userId: {} | role: {} | token: {}", phone, user.getId(), user.getRole(), token);
         
-        return buildLoginResponse(user, token);
+        UserLoginVO response = buildLoginResponse(user, token);
+        log.info("返回登录响应 | token: {} | userId: {}", response.getToken(), response.getUserId());
+        
+        return response;
     }
 
     /**
@@ -94,17 +97,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setPhone(phone);
         user.setPassword(DigestUtil.md5Hex(password));
         user.setNickname(StrUtil.isBlank(nickname) ? "用户" + phone.substring(7) : nickname);
-        user.setRole(UserRole.USER);
+        user.setRole(UserRoleEnum.USER.getCode());
         return user;
     }
 
     /**
      * 构建登录响应
      */
-    private LoginResponse buildLoginResponse(User user, String token) {
-        LoginResponse response = new LoginResponse();
+    private UserLoginVO buildLoginResponse(User user, String token) {
+        UserLoginVO response = new UserLoginVO();
         response.setToken(token);
-        response.setUserId(user.getId());
+        response.setUserId(String.valueOf(user.getId()));
         response.setPhone(user.getPhone());
         response.setNickname(user.getNickname());
         response.setRole(user.getRole());

@@ -1,8 +1,8 @@
 package com.example.user.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.example.user.dto.LoginResponse;
 import com.example.user.entity.User;
+import com.example.user.model.vo.UserLoginVO;
 
 public interface UserService extends IService<User> {
     
@@ -20,5 +20,5 @@ public interface UserService extends IService<User> {
      * @param password 密码（明文）
      * @return 登录响应（包含 Token 和用户信息）
      */
-    LoginResponse login(String phone, String password);
+    UserLoginVO login(String phone, String password);
 }

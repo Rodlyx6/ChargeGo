@@ -44,29 +44,44 @@ public class AuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
+        
+        System.out.println("🌐 网关拦截请求: " + path);
 
         // 白名单直接放行
         if (isWhitePath(path)) {
+            System.out.println("✅ 白名单路径，直接放行: " + path);
             return chain.filter(exchange);
         }
 
         // 获取并验证 token
+        String authHeader = request.getHeaders().getFirst("Authorization");
+        System.out.println("📋 Authorization 头: " + authHeader);
+        
         String token = extractToken(request);
         if (token == null) {
+            System.out.println("❌ Token 为空，返回 401");
             return unauthorized(exchange.getResponse(), "请先登录");
         }
+        
+        System.out.println("🔑 提取到 Token: " + token.substring(0, Math.min(20, token.length())) + "...");
 
         // 解析 token
         Claims claims = parseToken(token);
         if (claims == null) {
+            System.out.println("❌ Token 解析失败，返回 401");
             return unauthorized(exchange.getResponse(), "Token 无效或已过期");
         }
+        
+        System.out.println("✅ Token 解析成功");
 
         // 管理员权限检查
         Long userId = claims.get("userId", Long.class);
         Integer role = claims.get("role", Integer.class);
         
+        System.out.println("👤 用户信息: userId=" + userId + ", role=" + role);
+        
         if (path.contains("/admin") && !UserRole.ADMIN.equals(role)) {
+            System.out.println("❌ 非管理员访问管理员路径，返回 403");
             return forbidden(exchange.getResponse(), "您没有管理员权限");
         }
 
@@ -74,6 +89,8 @@ public class AuthFilter implements GlobalFilter, Ordered {
         ServerHttpRequest newRequest = request.mutate()
                 .header("X-User-Id", String.valueOf(userId))
                 .build();
+        
+        System.out.println("✅ 鉴权通过，转发请求");
 
         return chain.filter(exchange.mutate().request(newRequest).build());
     }
@@ -90,10 +107,19 @@ public class AuthFilter implements GlobalFilter, Ordered {
      */
     private String extractToken(ServerHttpRequest request) {
         String authHeader = request.getHeaders().getFirst("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+        if (authHeader == null || authHeader.trim().isEmpty()) {
+            return null;
         }
-        return null;
+        
+        // 兼容两种格式：
+        // 1. "Bearer eyJhbGc..." (标准格式)
+        // 2. "eyJhbGc..." (直接token)
+        if (authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7).trim();
+        } else {
+            // 直接返回 token（兼容没有 Bearer 前缀的情况）
+            return authHeader.trim();
+        }
     }
 
     /**
@@ -101,8 +127,12 @@ public class AuthFilter implements GlobalFilter, Ordered {
      */
     private Claims parseToken(String token) {
         try {
-            return JwtUtil.parseToken(token);
+            Claims claims = JwtUtil.parseToken(token);
+            System.out.println("🔓 Token 解析结果: " + claims);
+            return claims;
         } catch (Exception e) {
+            System.out.println("❌ Token 解析异常: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
