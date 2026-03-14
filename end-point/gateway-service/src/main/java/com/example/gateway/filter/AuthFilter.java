@@ -1,5 +1,6 @@
 package com.example.gateway.filter;
 
+import com.example.common.constant.UserRole;
 import com.example.common.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -23,7 +24,6 @@ import java.util.Map;
 
 /**
  * 全局 JWT 鉴权过滤器
- * 拦截所有请求，白名单直接放行，业务接口校验 Token
  */
 @Component
 public class AuthFilter implements GlobalFilter, Ordered {
@@ -34,10 +34,10 @@ public class AuthFilter implements GlobalFilter, Ordered {
     @Autowired
     private AntPathMatcher pathMatcher;
 
-    // 白名单：这些接口不需要登录就能访问
     private static final List<String> WHITE_LIST = List.of(
             "/user/register",
-            "/user/login"
+            "/user/login",
+            "/admin/login"
     );
 
     @Override
@@ -45,50 +45,84 @@ public class AuthFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
 
-        // 1. 白名单直接放行
-        for (String whitePath : WHITE_LIST) {
-            if (pathMatcher.match(whitePath, path)) {
-                return chain.filter(exchange);
-            }
+        // 白名单直接放行
+        if (isWhitePath(path)) {
+            return chain.filter(exchange);
         }
 
-        // 2. 从请求头中获取 Token
-        String token = request.getHeaders().getFirst("Authorization");
-        if (token == null || token.isBlank()) {
-            return writeErrorResponse(exchange.getResponse(), HttpStatus.UNAUTHORIZED, "请先登录");
+        // 获取并验证 token
+        String token = extractToken(request);
+        if (token == null) {
+            return unauthorized(exchange.getResponse(), "请先登录");
         }
 
-        // 3. 去掉 Bearer 前缀（如果有）
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        // 解析 token
+        Claims claims = parseToken(token);
+        if (claims == null) {
+            return unauthorized(exchange.getResponse(), "Token 无效或已过期");
         }
 
-        // 4. 解析并校验 Token
-        Claims claims;
-        try {
-            claims = JwtUtil.parseToken(token);
-        } catch (Exception e) {
-            return writeErrorResponse(exchange.getResponse(), HttpStatus.UNAUTHORIZED, "Token 无效或已过期");
-        }
-
-        // 5. 管理员接口权限校验：路径包含 /admin 的必须是管理员（role=1）
-        Integer role = claims.get("role", Integer.class);
-        if (path.contains("/admin") && !Integer.valueOf(1).equals(role)) {
-            return writeErrorResponse(exchange.getResponse(), HttpStatus.FORBIDDEN, "无权限访问");
-        }
-
-        // 6. 将 userId 和 role 写入请求头，转发给下游服务
+        // 管理员权限检查
         Long userId = claims.get("userId", Long.class);
-        ServerHttpRequest mutatedRequest = request.mutate()
+        Integer role = claims.get("role", Integer.class);
+        
+        if (path.contains("/admin") && !UserRole.ADMIN.equals(role)) {
+            return forbidden(exchange.getResponse(), "您没有管理员权限");
+        }
+
+        // 添加用户信息到请求头
+        ServerHttpRequest newRequest = request.mutate()
                 .header("X-User-Id", String.valueOf(userId))
-                .header("X-User-Role", String.valueOf(role))
                 .build();
 
-        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+        return chain.filter(exchange.mutate().request(newRequest).build());
     }
 
     /**
-     * 返回 JSON 格式的错误响应
+     * 检查是否白名单路径
+     */
+    private boolean isWhitePath(String path) {
+        return WHITE_LIST.stream().anyMatch(white -> pathMatcher.match(white, path));
+    }
+
+    /**
+     * 提取 token
+     */
+    private String extractToken(ServerHttpRequest request) {
+        String authHeader = request.getHeaders().getFirst("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+
+    /**
+     * 解析 token
+     */
+    private Claims parseToken(String token) {
+        try {
+            return JwtUtil.parseToken(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 返回 401 未授权
+     */
+    private Mono<Void> unauthorized(ServerHttpResponse response, String message) {
+        return writeErrorResponse(response, HttpStatus.UNAUTHORIZED, message);
+    }
+
+    /**
+     * 返回 403 禁止访问
+     */
+    private Mono<Void> forbidden(ServerHttpResponse response, String message) {
+        return writeErrorResponse(response, HttpStatus.FORBIDDEN, message);
+    }
+
+    /**
+     * 写入错误响应
      */
     private Mono<Void> writeErrorResponse(ServerHttpResponse response, HttpStatus status, String message) {
         response.setStatusCode(status);
@@ -97,14 +131,14 @@ public class AuthFilter implements GlobalFilter, Ordered {
         Map<String, Object> errorBody = Map.of(
                 "code", status.value(),
                 "msg", message,
-                "data", null
+                "data", ""
         );
 
         String json;
         try {
             json = objectMapper.writeValueAsString(errorBody);
         } catch (Exception e) {
-            json = "{\"code\":500,\"msg\":\"服务器内部错误\",\"data\":null}";
+            json = "{\"code\":500,\"msg\":\"系统内部错误\",\"data\":\"\"}";
         }
 
         DataBuffer buffer = response.bufferFactory().wrap(json.getBytes(StandardCharsets.UTF_8));
@@ -113,7 +147,6 @@ public class AuthFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // 数字越小优先级越高，-100 保证这个过滤器最先执行
         return -100;
     }
 }

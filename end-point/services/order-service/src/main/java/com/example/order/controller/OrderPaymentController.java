@@ -17,18 +17,11 @@ public class OrderPaymentController {
 
     /**
      * 支付订单
-     * order.status: 0 → 1
-     * station.status: 1 → 2
-     * pay_time 和 update_time 更新
      */
     @PostMapping("/pay")
     public R payOrder(@RequestHeader("X-User-Id") Long userId,
                       @RequestBody PaymentRequest request) {
-        try {
-            orderPaymentService.payOrder(request.getOrderNo(), userId);
-            return R.ok("支付成功", null);
-        } catch (Exception e) {
-            return R.error(500, e.getMessage());
-        }
+        orderPaymentService.payOrder(request.getOrderNo(), userId);
+        return R.ok("支付成功", null);
     }
 }

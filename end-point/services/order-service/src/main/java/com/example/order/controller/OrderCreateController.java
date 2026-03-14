@@ -17,17 +17,12 @@ public class OrderCreateController {
 
     /**
      * 创建预约订单
-     * userId 从网关透传的请求头 X-User-Id 中获取
      */
     @PostMapping("/create")
     public R createOrder(@RequestHeader("X-User-Id") Long userId,
                          @RequestBody CreateOrderRequest request) {
-        try {
-            String orderNo = orderCreateService.createOrder(userId, request.getStationId());
-            return R.ok("预约成功", orderNo);
-        } catch (Exception e) {
-            return R.error(500, e.getMessage());
-        }
+        String orderNo = orderCreateService.createOrder(userId, request.getStationId());
+        return R.ok("预约成功", orderNo);
     }
 
     /**
