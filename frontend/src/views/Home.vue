@@ -30,12 +30,17 @@
 
           <div class="flex items-center space-x-4">
             <template v-if="isAuthenticated">
-              <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-4">
                 <div class="hidden sm:block text-right">
                   <p class="text-sm font-semibold text-gray-900">{{ user?.nickname }}</p>
-                  <p class="text-xs text-gray-500">{{ user?.phone }}</p>
+                  <p class="text-xs text-gray-500">{{ isAdmin ? '👨‍💼 管理员' : '👤 普通用户' }}</p>
                 </div>
-                <button @click="handleLogout" class="btn-ghost text-sm">退出登录</button>
+                <button 
+                  @click="showLogoutModal = true"
+                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                >
+                  退出登录
+                </button>
               </div>
             </template>
             <template v-else>
@@ -47,8 +52,113 @@
       </div>
     </header>
 
-    <!-- Hero Section -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-blue-900 text-white">
+    <!-- 退出登录确认弹窗 -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showLogoutModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full animate-scale-in">
+            <div class="p-8">
+              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <h3 class="text-2xl font-bold text-center text-gray-900 mb-2">确认退出登录？</h3>
+              <p class="text-center text-gray-600 mb-8">退出后需要重新登录才能使用服务</p>
+              <div class="flex gap-4">
+                <button
+                  @click="showLogoutModal = false"
+                  class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors duration-200"
+                >
+                  取消
+                </button>
+                <button
+                  @click="confirmLogout"
+                  class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                >
+                  确认退出
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- 管理员首页 -->
+    <template v-if="isAuthenticated && isAdmin">
+      <section class="min-h-screen bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div class="space-y-12">
+            <!-- 欢迎信息 -->
+            <div class="text-center space-y-4">
+              <h1 class="text-5xl md:text-6xl font-display font-bold">
+                欢迎回来，<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-300 to-primary-100">{{ user?.nickname }}</span>
+              </h1>
+              <p class="text-xl text-slate-300">👨‍💼 管理员面板</p>
+            </div>
+
+            <!-- 管理功能卡片 -->
+            <div class="grid md:grid-cols-2 gap-8">
+              <!-- 充电桩管理 -->
+              <router-link to="/admin/stations" class="group">
+                <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 hover:bg-white/15 transition-all duration-300 cursor-pointer">
+                  <div class="flex items-start justify-between mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <svg class="w-6 h-6 text-white/50 group-hover:text-white/100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <h3 class="text-2xl font-bold mb-2">充电桩管理</h3>
+                  <p class="text-slate-300">新增、编辑、删除充电桩信息</p>
+                </div>
+              </router-link>
+
+              <!-- 管理概览 -->
+              <router-link to="/admin" class="group">
+                <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 hover:bg-white/15 transition-all duration-300 cursor-pointer">
+                  <div class="flex items-start justify-between mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <svg class="w-6 h-6 text-white/50 group-hover:text-white/100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <h3 class="text-2xl font-bold mb-2">管理概览</h3>
+                  <p class="text-slate-300">查看系统统计数据和运营情况</p>
+                </div>
+              </router-link>
+            </div>
+
+            <!-- 快速操作 -->
+            <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8">
+              <h3 class="text-2xl font-bold mb-6">快速操作</h3>
+              <div class="grid md:grid-cols-3 gap-4">
+                <router-link to="/admin/stations" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg transition-all duration-200 text-center">
+                  ➕ 新增充电桩
+                </router-link>
+                <router-link to="/admin/stations" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg transition-all duration-200 text-center">
+                  📋 查看所有充电桩
+                </router-link>
+                <router-link to="/admin" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 text-center">
+                  📊 查看统计数据
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- 普通用户首页 -->
+    <template v-else-if="isAuthenticated && !isAdmin">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative">
         <div class="grid md:grid-cols-2 gap-12 items-center">
           <div class="space-y-8 animate-fade-in">
@@ -95,7 +205,7 @@
           </div>
         </div>
       </div>
-    </section>
+    </template>
 
     <!-- Features Section -->
     <section class="py-20 bg-white">
@@ -235,7 +345,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -246,8 +356,42 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const user = computed(() => authStore.user)
 
-const handleLogout = () => {
+// 退出登录弹窗状态
+const showLogoutModal = ref(false)
+
+// 确认退出登录
+const confirmLogout = async () => {
+  showLogoutModal.value = false
+  // 添加退出动画
+  await new Promise(resolve => setTimeout(resolve, 300))
   authStore.logout()
   router.push('/')
 }
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+</style>

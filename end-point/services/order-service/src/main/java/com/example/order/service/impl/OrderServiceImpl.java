@@ -206,6 +206,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setUserId(userId);
         order.setStationId(stationId);
         order.setStatus(OrderStatusEnum.PENDING_PAYMENT.getCode());
+        order.setCreateTime(LocalDateTime.now());
+        order.setUpdateTime(LocalDateTime.now());
         this.save(order);
         log.info("订单创建成功 | orderNo: {} | userId: {} | stationId: {}", orderNo, userId, stationId);
     }

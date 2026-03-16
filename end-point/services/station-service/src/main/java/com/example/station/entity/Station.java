@@ -30,8 +30,34 @@ public class Station {
     @TableField("location")
     private String location;
 
+    /**
+     * 充电类型：1-快充(2元/分钟) 2-普通充电(1元/分钟) 3-慢充(0.5元/分钟)
+     */
+    @TableField("charge_type")
+    private Integer chargeType;
+
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+
+    // ==================== 查询结果字段（非数据库字段） ====================
+
+    /**
+     * 距离（米）- 查询时计算，不存储在数据库
+     */
+    @TableField(exist = false)
+    private Double distance;
+
+    /**
+     * 经度 - 从 location 字段解析
+     */
+    @TableField(exist = false)
+    private Double longitude;
+
+    /**
+     * 纬度 - 从 location 字段解析
+     */
+    @TableField(exist = false)
+    private Double latitude;
 }

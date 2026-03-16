@@ -56,6 +56,7 @@ api.interceptors.request.use(
     const authStore = useAuthStore()
     console.log('🚀 发送请求:', config.url)
     console.log('🔑 当前 Token:', authStore.token)
+    console.log('👤 当前用户:', authStore.user)
     
     if (authStore.token) {
       // 确保 token 格式正确：如果已经有 Bearer 前缀就不再添加
@@ -69,6 +70,15 @@ api.interceptors.request.use(
     } else {
       console.log('⚠️ 没有 Token，跳过 Authorization 头')
     }
+    
+    // 添加 X-User-Id 请求头（后端需要）
+    if (authStore.user && authStore.user.userId) {
+      config.headers['X-User-Id'] = authStore.user.userId
+      console.log('✅ 已添加 X-User-Id 头:', authStore.user.userId)
+    } else {
+      console.log('⚠️ 没有用户ID，跳过 X-User-Id 头')
+    }
+    
     return config
   },
   (error) => {

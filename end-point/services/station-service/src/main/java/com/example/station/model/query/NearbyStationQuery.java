@@ -9,5 +9,5 @@ import lombok.Data;
 public class NearbyStationQuery {
     private Double longitude;     // 经度
     private Double latitude;      // 纬度
-    private Integer radiusMeters; // 搜索半径（米）
+    private Double radiusMeters; // 搜索半径（米）
 }

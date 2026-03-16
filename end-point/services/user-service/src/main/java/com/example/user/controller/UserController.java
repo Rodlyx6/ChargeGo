@@ -11,6 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 用户控制器
+ * 职责：处理用户端的注册、登陆等接口
+ * 权限：无需认证
+ */
 @Slf4j
 @RestController
 public class UserController {
@@ -23,6 +28,7 @@ public class UserController {
      */
     @PostMapping("/user/register")
     public R register(@RequestBody UserRegisterDTO request) {
+        log.info("📝 用户注册 | phone: {}", request.getPhone());
         userService.register(request.getPhone(), request.getPassword(), request.getNickname());
         return R.ok("注册成功", null);
     }
@@ -32,6 +38,7 @@ public class UserController {
      */
     @PostMapping("/user/login")
     public R userLogin(@RequestBody UserLoginDTO request) {
+        log.info("🔐 用户登陆 | phone: {}", request.getPhone());
         UserLoginVO response = userService.login(request.getPhone(), request.getPassword());
         
         // 管理员不能用此接口
@@ -47,6 +54,7 @@ public class UserController {
      */
     @PostMapping("/admin/login")
     public R adminLogin(@RequestBody UserLoginDTO request) {
+        log.info("🔐 管理员登陆 | phone: {}", request.getPhone());
         UserLoginVO response = userService.login(request.getPhone(), request.getPassword());
         
         // 只有管理员才能登陆
@@ -55,13 +63,5 @@ public class UserController {
         }
         
         return R.ok("登陆成功", response);
-    }
-
-    /**
-     * 测试接口
-     */
-    @GetMapping("/user/hello")
-    public String hello() {
-        return "hello user-service";
     }
 }

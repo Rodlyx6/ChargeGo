@@ -12,11 +12,11 @@ spring:
           enabled: false
     gateway:
       routes:
-        # 用户服务路由（包括管理员登陆）
+        # 用户服务路由（包括管理员登陆和用户管理）
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/user/**,/admin/login
+            - Path=/user/**,/admin/login,/admin/user/**
 
         # 充电桩服务路由
         - id: station-service
@@ -24,8 +24,8 @@ spring:
           predicates:
             - Path=/station/**,/admin/station/**
 
-        # 订单服务路由
+        # 订单服务路由（包括订单管理）
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/order/**,/admin/order/**
+            - Path=/order/**,/admin/order/**,/charge/**

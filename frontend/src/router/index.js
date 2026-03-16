@@ -43,6 +43,18 @@ const routes = [
     name: 'AdminStations',
     component: () => import('@/views/admin/Stations.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: () => import('@/views/admin/Orders.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('@/views/admin/Users.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
@@ -61,14 +73,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
-  // 如果已登录且访问登录/注册页，重定向
+  // 如果已登录且访问登录/注册页，重定向到首页
   if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
-    // 管理员跳转到管理后台，普通用户跳转到首页
-    if (authStore.isAdmin) {
-      next({ name: 'Admin' })
-    } else {
-      next({ name: 'Home' })
-    }
+    next({ name: 'Home' })
     return
   }
   
@@ -84,15 +91,9 @@ router.beforeEach((to, from, next) => {
     return
   }
   
-  // 管理员访问普通用户页面，重定向到管理后台
+  // 管理员访问普通用户页面，重定向到首页
   if (authStore.isAdmin && (to.name === 'Stations' || to.name === 'MyOrders')) {
-    next({ name: 'Admin' })
-    return
-  }
-  
-  // 普通用户访问首页，如果是管理员则跳转到管理后台
-  if (to.name === 'Home' && authStore.isAuthenticated && authStore.isAdmin) {
-    next({ name: 'Admin' })
+    next({ name: 'Home' })
     return
   }
   

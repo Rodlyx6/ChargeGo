@@ -15,6 +15,8 @@
           <nav class="flex items-center space-x-6">
             <router-link to="/admin" class="text-gray-900 font-semibold">概览</router-link>
             <router-link to="/admin/stations" class="text-gray-600 hover:text-gray-900">充电桩管理</router-link>
+            <router-link to="/admin/orders" class="text-gray-600 hover:text-gray-900">订单管理</router-link>
+            <router-link to="/admin/users" class="text-gray-600 hover:text-gray-900">用户管理</router-link>
             <router-link to="/" class="text-gray-600 hover:text-gray-900">返回首页</router-link>
           </nav>
         </div>
@@ -91,14 +93,14 @@
             <h3 class="font-semibold mb-2">充电桩管理</h3>
             <p class="text-sm text-gray-600">查看、添加、编辑充电桩</p>
           </router-link>
-          <div class="p-4 border-2 border-gray-200 rounded-xl opacity-50 cursor-not-allowed">
+          <router-link to="/admin/orders" class="p-4 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all">
             <h3 class="font-semibold mb-2">订单管理</h3>
-            <p class="text-sm text-gray-600">查看所有订单（待开发）</p>
-          </div>
-          <div class="p-4 border-2 border-gray-200 rounded-xl opacity-50 cursor-not-allowed">
+            <p class="text-sm text-gray-600">查看所有订单和统计数据</p>
+          </router-link>
+          <router-link to="/admin/users" class="p-4 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all">
             <h3 class="font-semibold mb-2">用户管理</h3>
-            <p class="text-sm text-gray-600">管理用户信息（待开发）</p>
-          </div>
+            <p class="text-sm text-gray-600">管理用户信息和权限</p>
+          </router-link>
         </div>
       </div>
     </div>

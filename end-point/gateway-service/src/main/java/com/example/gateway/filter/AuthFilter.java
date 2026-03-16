@@ -1,6 +1,6 @@
 package com.example.gateway.filter;
 
-import com.example.common.constant.UserRole;
+import com.example.common.enums.UserRoleEnum;
 import com.example.common.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -80,7 +80,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
         
         System.out.println("👤 用户信息: userId=" + userId + ", role=" + role);
         
-        if (path.contains("/admin") && !UserRole.ADMIN.equals(role)) {
+        if (path.contains("/admin") && !UserRoleEnum.isAdmin(role)) {
             System.out.println("❌ 非管理员访问管理员路径，返回 403");
             return forbidden(exchange.getResponse(), "您没有管理员权限");
         }

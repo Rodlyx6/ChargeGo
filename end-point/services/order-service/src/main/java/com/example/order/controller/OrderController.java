@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 订单控制器（统一）
- * 整合了创建、支付、取消、查询等所有订单相关接口
+ * 订单控制器（用户端）
+ * 职责：处理用户端的订单创建、支付、取消、查询等接口
+ * 权限：需要用户认证
  */
 @Slf4j
 @RestController
@@ -30,14 +31,11 @@ public class OrderController {
     @PostMapping("/create")
     public R createOrder(@RequestHeader("X-User-Id") Long userId,
                          @RequestBody OrderCreateDTO request) {
+        log.info("📥 创建订单 | userId: {} | stationId: {}", userId, request.getStationId());
+        
         Long stationId = Long.parseLong(request.getStationId());
-        
-        log.info("📥 收到预约请求 | userId: {} | stationId(原始): {} | stationId(转换后): {}", 
-                userId, request.getStationId(), stationId);
-        
         String orderNo = orderService.createOrder(userId, stationId);
         
-        log.info("✅ 订单创建成功 | orderNo: {}", orderNo);
         return R.ok("预约成功", orderNo);
     }
 
@@ -47,11 +45,9 @@ public class OrderController {
     @PostMapping("/pay")
     public R payOrder(@RequestHeader("X-User-Id") Long userId,
                       @RequestBody OrderPayDTO request) {
-        log.info("📥 收到支付请求 | userId: {} | orderNo: {}", userId, request.getOrderNo());
+        log.info("💳 支付订单 | userId: {} | orderNo: {}", userId, request.getOrderNo());
         
         orderService.payOrder(request.getOrderNo(), userId);
-        
-        log.info("✅ 支付成功 | orderNo: {}", request.getOrderNo());
         return R.ok("支付成功", null);
     }
 
@@ -61,11 +57,9 @@ public class OrderController {
     @PostMapping("/cancelPayment")
     public R cancelPayment(@RequestHeader("X-User-Id") Long userId,
                            @RequestBody OrderCancelDTO request) {
-        log.info("📥 收到取消支付请求 | userId: {} | orderNo: {}", userId, request.getOrderNo());
+        log.info("❌ 取消支付 | userId: {} | orderNo: {}", userId, request.getOrderNo());
         
         orderService.cancelPayment(request.getOrderNo(), userId);
-        
-        log.info("✅ 取消支付成功 | orderNo: {}", request.getOrderNo());
         return R.ok("取消成功", null);
     }
 
@@ -75,44 +69,32 @@ public class OrderController {
     @PostMapping("/cancelOrder")
     public R cancelOrder(@RequestHeader("X-User-Id") Long userId,
                          @RequestBody OrderCancelDTO request) {
-        log.info("📥 收到取消订单请求 | userId: {} | orderNo: {}", userId, request.getOrderNo());
+        log.info("⏹️ 结束充电 | userId: {} | orderNo: {}", userId, request.getOrderNo());
         
         orderService.cancelOrder(request.getOrderNo(), userId);
-        
-        log.info("✅ 取消订单成功 | orderNo: {}", request.getOrderNo());
         return R.ok("操作成功", null);
     }
 
     /**
-     * 查询当前用户的所有订单
+     * 查询我的订单列表
      */
     @GetMapping("/list")
     public R getMyOrders(@RequestHeader("X-User-Id") Long userId) {
-        log.info("📋 查询用户订单列表 | userId: {}", userId);
+        log.info("📋 查询订单列表 | userId: {}", userId);
         
         List<OrderVO> orders = orderService.getOrderList(userId);
-        
         return R.ok("查询成功", orders);
     }
 
     /**
      * 查询订单详情
      */
-    @GetMapping("/detail/{orderNo}")
+    @GetMapping("/{orderNo}")
     public R getOrderDetail(@RequestHeader("X-User-Id") Long userId,
                             @PathVariable String orderNo) {
-        log.info("📋 查询订单详情 | userId: {} | orderNo: {}", userId, orderNo);
+        log.info("🔍 查询订单详情 | userId: {} | orderNo: {}", userId, orderNo);
         
         OrderVO order = orderService.getOrderDetail(orderNo, userId);
-        
         return R.ok("查询成功", order);
-    }
-
-    /**
-     * 测试接口
-     */
-    @GetMapping("/hello")
-    public String hello() {
-        return "hello order-service";
     }
 }
