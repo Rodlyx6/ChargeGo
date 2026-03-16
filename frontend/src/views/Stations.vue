@@ -83,13 +83,71 @@
 
     <!-- Reserve Modal -->
     <div v-if="showReserveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl p-8 max-w-md w-full">
-        <h3 class="text-2xl font-bold mb-4">确认预约</h3>
-        <div class="space-y-3 mb-6">
+      <div class="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <h3 class="text-2xl font-bold mb-6">预约充电</h3>
+        
+        <!-- 充电桩信息 -->
+        <div class="space-y-3 mb-6 p-4 bg-blue-50 rounded-lg">
           <p><span class="font-semibold">充电桩:</span> {{ selectedStation?.snCode }}</p>
           <p><span class="font-semibold">地址:</span> {{ selectedStation?.address }}</p>
-          <p class="text-sm text-gray-600">预约后请在15分钟内完成支付，否则订单将自动取消</p>
         </div>
+
+        <!-- 充电类型选择 -->
+        <div class="mb-6">
+          <label class="block text-sm font-semibold text-gray-700 mb-3">选择充电类型</label>
+          <div class="grid grid-cols-3 gap-3">
+            <button
+              v-for="type in chargeTypes"
+              :key="type.code"
+              @click="reserveForm.chargeType = type.code"
+              :class="[
+                'p-3 rounded-lg border-2 transition-all duration-200',
+                reserveForm.chargeType === type.code
+                  ? 'border-primary-500 bg-primary-50 text-primary-700 font-semibold'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              <div class="text-2xl mb-1">{{ type.icon }}</div>
+              <div class="text-xs font-medium">{{ type.name }}</div>
+              <div class="text-xs text-gray-500 mt-1">{{ type.desc }}</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 充电时长选择 -->
+        <div class="mb-6">
+          <label class="block text-sm font-semibold text-gray-700 mb-3">选择充电时长</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              v-for="hours in [1, 2, 3, 4]"
+              :key="hours"
+              @click="reserveForm.chargeTime = hours"
+              :class="[
+                'p-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium',
+                reserveForm.chargeTime === hours
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              {{ hours }}小时
+            </button>
+          </div>
+          <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+              <span class="font-semibold">预期费用:</span>
+              <span class="text-lg font-bold text-yellow-600">¥{{ calculateExpectedAmount() }}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- 提示信息 -->
+        <div class="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p class="text-sm text-blue-800">
+            ⏰ 预约后请在15分钟内完成支付，否则订单将自动取消
+          </p>
+        </div>
+
+        <!-- 操作按钮 -->
         <div class="flex gap-4">
           <button @click="confirmReserve" :disabled="reserving" class="flex-1 btn-primary">
             {{ reserving ? '预约中...' : '确认预约' }}
@@ -115,12 +173,31 @@ const searchForm = ref({
   radiusMeters: 5000
 })
 
+const reserveForm = ref({
+  chargeType: 1,  // 1: 快充, 2: 普通充电, 3: 慢充
+  chargeTime: 1   // 充电时长（小时）
+})
+
 const stations = ref([])
 const loading = ref(false)
 const searched = ref(false)
 const showReserveModal = ref(false)
 const selectedStation = ref(null)
 const reserving = ref(false)
+
+// 充电类型配置（与后端 API 文档一致）
+const chargeTypes = [
+  { code: 1, name: '快充', icon: '⚡', desc: '10元/小时' },
+  { code: 2, name: '普通充电', icon: '🔌', desc: '5元/小时' },
+  { code: 3, name: '慢充', icon: '🚀', desc: '2元/小时' }
+]
+
+// 充电价格配置（元/小时）- 与后端 API 文档一致
+const chargePrices = {
+  1: 10.0,  // 快充 10元/小时
+  2: 5.0,   // 普通充电 5元/小时
+  3: 2.0    // 慢充 2元/小时
+}
 
 const searchStations = async () => {
   loading.value = true
@@ -172,23 +249,41 @@ const getStatusBadgeClass = (status) => {
   return map[status] || 'badge'
 }
 
+const calculateExpectedAmount = () => {
+  const price = chargePrices[reserveForm.value.chargeType] || 0
+  const amount = price * reserveForm.value.chargeTime
+  return amount.toFixed(2)
+}
+
 const reserveStation = (station) => {
   selectedStation.value = station
+  // 重置预约表单（默认快充1小时）
+  reserveForm.value = {
+    chargeType: 1,  // 默认快充
+    chargeTime: 1   // 默认1小时
+  }
   showReserveModal.value = true
 }
 
 const confirmReserve = async () => {
   reserving.value = true
   try {
-    // 注意：stationId 可能是字符串格式（后端返回的 Long 类型）
-    // 需要确保发送时也是字符串或数字
     const stationId = typeof selectedStation.value.id === 'string' 
       ? selectedStation.value.id 
       : String(selectedStation.value.id)
     
-    console.log('📤 发送预约请求，stationId:', stationId, '类型:', typeof stationId)
+    console.log('📤 发送预约请求', {
+      stationId,
+      chargeType: reserveForm.value.chargeType,
+      chargeTime: reserveForm.value.chargeTime,
+      expectedAmount: calculateExpectedAmount()
+    })
     
-    const res = await orderApi.createOrder(stationId)
+    const res = await orderApi.createOrder(stationId, {
+      chargeType: reserveForm.value.chargeType,
+      chargeTime: reserveForm.value.chargeTime
+    })
+    
     alert(`预约成功！订单号: ${res.data}`)
     showReserveModal.value = false
     router.push('/my-orders')

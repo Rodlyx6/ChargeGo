@@ -15,7 +15,7 @@ public class Station {
     @TableField("sn_code")
     private String snCode;
 
-    // 状态：0-空闲 1-使用中 2-故障等 (TINYINT(1))
+    // 状态：0-空闲 1-预约中 2-充电中 3-故障 (TINYINT(1))
     @TableField("status")
     private Integer status;
 
@@ -29,12 +29,6 @@ public class Station {
      */
     @TableField("location")
     private String location;
-
-    /**
-     * 充电类型：1-快充(2元/分钟) 2-普通充电(1元/分钟) 3-慢充(0.5元/分钟)
-     */
-    @TableField("charge_type")
-    private Integer chargeType;
 
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;

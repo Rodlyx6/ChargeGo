@@ -1,12 +1,21 @@
 import api from '@/utils/request'
 
 // 创建预约订单
-export const createOrder = (stationId) => {
-  // 关键：确保 stationId 以字符串形式发送
+export const createOrder = (stationId, chargeOptions = {}) => {
+  // 确保参数正确传递（与后端 API 文档一致）
+  const chargeType = chargeOptions.chargeType !== undefined ? chargeOptions.chargeType : 1
+  const chargeTime = chargeOptions.chargeTime !== undefined ? chargeOptions.chargeTime : 1
+  
   const payload = {
-    stationId: String(stationId)
+    stationId: String(stationId),
+    chargeType: Number(chargeType),
+    chargeTime: Number(chargeTime)
   }
+  
   console.log('📤 createOrder 发送数据:', payload)
+  console.log('📤 chargeType:', payload.chargeType, '类型:', typeof payload.chargeType)
+  console.log('📤 chargeTime:', payload.chargeTime, '类型:', typeof payload.chargeTime)
+  
   return api.post('/order/create', payload)
 }
 
