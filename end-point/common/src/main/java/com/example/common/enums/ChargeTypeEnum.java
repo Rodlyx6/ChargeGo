@@ -4,24 +4,28 @@ import lombok.Getter;
 
 /**
  * 充电类型枚举
+ * 定义不同的充电类型和对应的价格
  */
 @Getter
 public enum ChargeTypeEnum {
     
-    /** 快充 */
+    /** 快充：2元/分钟 */
     FAST(1, "快充", 2.0),
     
-    /** 慢充 */
-    SLOW(2, "慢充", 1.0);
+    /** 普通充电：1元/分钟 */
+    NORMAL(2, "普通充电", 1.0),
+    
+    /** 慢充：0.5元/分钟 */
+    SLOW(3, "慢充", 0.5);
     
     private final Integer code;
     private final String desc;
-    private final Double pricePerHour;  // 每小时价格（元）
+    private final Double pricePerMinute;
     
-    ChargeTypeEnum(Integer code, String desc, Double pricePerHour) {
+    ChargeTypeEnum(Integer code, String desc, Double pricePerMinute) {
         this.code = code;
         this.desc = desc;
-        this.pricePerHour = pricePerHour;
+        this.pricePerMinute = pricePerMinute;
     }
     
     /**
@@ -38,16 +42,18 @@ public enum ChargeTypeEnum {
     }
     
     /**
-     * 计算预期金额
-     * @param chargeTime 充电时长（分钟）
-     * @return 预期金额（元）
+     * 获取充电类型描述
      */
-    public Double calculateAmount(Integer chargeTime) {
-        if (chargeTime == null || chargeTime <= 0) {
-            return 0.0;
-        }
-        // 转换为小时，向上取整
-        double hours = Math.ceil(chargeTime / 60.0);
-        return pricePerHour * hours;
+    public static String getDesc(Integer code) {
+        ChargeTypeEnum type = getByCode(code);
+        return type != null ? type.getDesc() : "未知";
+    }
+    
+    /**
+     * 获取单位价格（元/分钟）
+     */
+    public static Double getPricePerMinute(Integer code) {
+        ChargeTypeEnum type = getByCode(code);
+        return type != null ? type.getPricePerMinute() : 0.0;
     }
 }
