@@ -15,11 +15,13 @@ public interface OrderService {
      * 创建预约订单
      * 流程：检查用户是否有待支付订单 → Redisson 分布式锁 → 检查桩状态 → Feign 改桩状态为预约中(1) → 生成订单(status=0) → RabbitMQ 发超时消息
      *
-     * @param userId    下单用户ID
-     * @param stationId 要预约的充电桩ID
+     * @param userId      下单用户ID
+     * @param stationId   要预约的充电桩ID
+     * @param chargeType  充电类型（1快充 2普通 3慢充）
+     * @param chargeTime  充电时间（小时）
      * @return 生成的订单号
      */
-    String createOrder(Long userId, Long stationId);
+    String createOrder(Long userId, Long stationId, Integer chargeType, Integer chargeTime);
 
     /**
      * 支付订单

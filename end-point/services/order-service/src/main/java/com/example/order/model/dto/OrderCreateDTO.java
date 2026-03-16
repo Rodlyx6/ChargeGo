@@ -12,4 +12,6 @@ public class OrderCreateDTO {
      * 使用 String 类型接收，避免前端 JavaScript 精度丢失
      */
     private String stationId;
+    private Integer chargeType;
+    private Integer chargeTime;
 }

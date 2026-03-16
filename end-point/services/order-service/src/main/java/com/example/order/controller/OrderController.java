@@ -31,10 +31,11 @@ public class OrderController {
     @PostMapping("/create")
     public R createOrder(@RequestHeader("X-User-Id") Long userId,
                          @RequestBody OrderCreateDTO request) {
-        log.info("📥 创建订单 | userId: {} | stationId: {}", userId, request.getStationId());
+        log.info("📥 创建订单 | userId: {} | stationId: {} | chargeType: {} | chargeTime: {}", 
+                userId, request.getStationId(), request.getChargeType(), request.getChargeTime());
         
         Long stationId = Long.parseLong(request.getStationId());
-        String orderNo = orderService.createOrder(userId, stationId);
+        String orderNo = orderService.createOrder(userId, stationId, request.getChargeType(), request.getChargeTime());
         
         return R.ok("预约成功", orderNo);
     }

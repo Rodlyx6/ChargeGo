@@ -8,6 +8,8 @@ import com.example.common.exception.BusinessException;
 import com.example.common.result.R;
 import com.example.order.config.RabbitMQConfig;
 import com.example.order.entity.Order;
+import com.example.order.enums.ChargeTypeEnum;
+import com.example.order.enums.ChargeTypeEnum;
 import com.example.order.feign.StationFeignClient;
 import com.example.order.mapper.OrderMapper;
 import com.example.order.model.vo.OrderVO;
@@ -45,7 +47,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     // ==================== 创建订单 ====================
 
     @Override
-    public String createOrder(Long userId, Long stationId) {
+    public String createOrder(Long userId, Long stationId, Integer chargeType, Integer chargeTime) {
         checkUserPendingOrder(userId);
 
         String lockKey = "lock:station:" + stationId;
@@ -60,7 +62,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             lockStation(stationId);
 
             String orderNo = generateOrderNo();
-            createOrderRecord(userId, stationId, orderNo);
+            
+            // 计算预期金额
+            Double expectedAmount = calculateExpectedAmount(chargeType, chargeTime);
+            
+            createOrderRecord(userId, stationId, orderNo, chargeType, chargeTime, expectedAmount);
             sendTimeoutMessage(orderNo);
 
             return orderNo;
@@ -119,8 +125,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new BusinessException("只有充电中的订单才能取消");
         }
 
+        // 计算实际充电时间（分钟转小时，保留2位小数）
+        LocalDateTime now = LocalDateTime.now();
+        long chargedMinutes = java.time.Duration.between(order.getPayTime(), now).toMinutes();
+        double actualChargeTime = Math.round(chargedMinutes / 60.0 * 100) / 100.0;
+
+        // 计算实际金额
+        ChargeTypeEnum chargeTypeEnum = ChargeTypeEnum.getByCode(order.getChargeType());
+        double actualAmount = chargeTypeEnum != null 
+                ? Math.round(chargeTypeEnum.getPricePerHour() * actualChargeTime * 100) / 100.0
+                : 0.0;
+
+        // 计算退款金额 = 预期金额 - 实际金额
+        double expectedAmount = order.getExpectedAmount() != null ? order.getExpectedAmount() : 0.0;
+        double refundAmount = Math.max(0, Math.round((expectedAmount - actualAmount) * 100) / 100.0);
+
+        order.setActualAmount(actualAmount);
+        order.setRefundAmount(refundAmount);
         cancelOrderAndReleaseStation(order, OrderStatusEnum.COMPLETED.getCode());
-        log.info("订单已取消 | orderNo: {} | userId: {}", orderNo, userId);
+        
+        log.info("订单已取消 | orderNo: {} | actualChargeTime: {}h | actualAmount: {} | refundAmount: {}",
+                orderNo, actualChargeTime, actualAmount, refundAmount);
     }
 
     @Override
@@ -200,16 +225,36 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
     }
 
-    private void createOrderRecord(Long userId, Long stationId, String orderNo) {
+    /**
+     * 计算预期金额
+     */
+    private Double calculateExpectedAmount(Integer chargeType, Integer chargeTime) {
+        if (chargeType == null || chargeTime == null) {
+            throw new BusinessException("充电类型和充电时间不能为空");
+        }
+        
+        ChargeTypeEnum chargeTypeEnum = ChargeTypeEnum.getByCode(chargeType);
+        if (chargeTypeEnum == null) {
+            throw new BusinessException("充电类型不存在");
+        }
+        
+        return chargeTypeEnum.calculatePrice(chargeTime);
+    }
+
+    private void createOrderRecord(Long userId, Long stationId, String orderNo, Integer chargeType, Integer chargeTime, Double expectedAmount) {
         Order order = new Order();
         order.setOrderNo(orderNo);
         order.setUserId(userId);
         order.setStationId(stationId);
         order.setStatus(OrderStatusEnum.PENDING_PAYMENT.getCode());
+        order.setChargeType(chargeType);
+        order.setChargeTime(chargeTime);
+        order.setExpectedAmount(expectedAmount);
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         this.save(order);
-        log.info("订单创建成功 | orderNo: {} | userId: {} | stationId: {}", orderNo, userId, stationId);
+        log.info("订单创建成功 | orderNo: {} | userId: {} | stationId: {} | chargeType: {} | chargeTime: {} | expectedAmount: {}", 
+                orderNo, userId, stationId, chargeType, chargeTime, expectedAmount);
     }
 
     private void sendTimeoutMessage(String orderNo) {
@@ -253,6 +298,26 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         vo.setStationId(String.valueOf(order.getStationId()));
         vo.setStatus(order.getStatus());
         vo.setStatusDesc(OrderStatusEnum.getDesc(order.getStatus()));
+        
+        // 充电相关信息
+        vo.setChargeType(order.getChargeType());
+        if (order.getChargeType() != null) {
+            ChargeTypeEnum chargeTypeEnum = ChargeTypeEnum.getByCode(order.getChargeType());
+            vo.setChargeTypeDesc(chargeTypeEnum != null ? chargeTypeEnum.getDesc() : "未知");
+        }
+        vo.setChargeTime(order.getChargeTime());
+        vo.setExpectedAmount(order.getExpectedAmount());
+        vo.setActualAmount(order.getActualAmount());
+        vo.setRefundAmount(order.getRefundAmount());
+        
+        // 实际充电时间 = 结束时间(updateTime) - 支付时间(payTime)
+        if (order.getPayTime() != null && order.getUpdateTime() != null
+                && OrderStatusEnum.COMPLETED.getCode().equals(order.getStatus())) {
+            long minutes = java.time.Duration.between(order.getPayTime(), order.getUpdateTime()).toMinutes();
+            double actualChargeTime = Math.round(minutes / 60.0 * 100) / 100.0;
+            vo.setActualChargeTime(actualChargeTime);
+        }
+        
         vo.setPayTime(order.getPayTime());
         vo.setCreateTime(order.getCreateTime());
         vo.setUpdateTime(order.getUpdateTime());
